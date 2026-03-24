@@ -43,6 +43,16 @@ export const mockChatRooms: ChatRoom[] = [
     createdAt: new Date("2026-02-20T09:00:00Z"),
     lastMessageAt: new Date("2026-03-12T15:00:00Z"),
   },
+  {
+    _id: "booking_BK-20260301-001",
+    clientUid: "mock-uid-sd-001",
+    agentUid: "agent-concierge-001",
+    tourId: "wix-tour-sahara-001",
+    tourSlug: "sahara-desert-expedition",
+    status: "active",
+    createdAt: new Date("2026-03-02T12:00:00Z"),
+    lastMessageAt: new Date("2026-03-20T14:30:00Z"),
+  },
 ]
 
 // Lookup for display names in mock mode (keyed by clientUid)
@@ -189,6 +199,32 @@ export const mockRoomMessages: Record<string, ChatMessage[]> = {
       text: "Got them, all signed and returned. Thanks for the great experience!",
       timestamp: new Date("2026-03-12T15:00:00Z"),
       read: true,
+    },
+  ],
+  "booking_BK-20260301-001": [
+    {
+      _id: "b1-msg-001",
+      senderUid: "mock-uid-sd-001",
+      senderRole: "client",
+      text: "Hi, I just placed a booking for the Sahara Desert Expedition. Can I request a luxury tent upgrade?",
+      timestamp: new Date("2026-03-02T12:00:00Z"),
+      read: true,
+    },
+    {
+      _id: "b1-msg-002",
+      senderUid: "agent-concierge-001",
+      senderRole: "agent",
+      text: "Of course, Sophia! I've noted the luxury tent upgrade on your booking. You'll receive a confirmation email shortly.",
+      timestamp: new Date("2026-03-02T12:15:00Z"),
+      read: true,
+    },
+    {
+      _id: "b1-msg-003",
+      senderUid: "mock-uid-sd-001",
+      senderRole: "client",
+      text: "Thank you! Also, any dietary requirements form we need to fill in?",
+      timestamp: new Date("2026-03-20T14:30:00Z"),
+      read: false,
     },
   ],
 }

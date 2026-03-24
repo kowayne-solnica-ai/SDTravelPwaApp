@@ -107,8 +107,9 @@ export function BookingChatPanel({ bookingId, tourId, tourSlug }: BookingChatPan
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gold shadow-lg transition-transform hover:scale-105"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gold shadow-lg transition-transform active:scale-95 hover:scale-105"
         aria-label={isOpen ? "Close chat" : "Open chat"}
+        style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
         {isOpen ? (
           <svg className="h-6 w-6 text-charcoal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -128,22 +129,41 @@ export function BookingChatPanel({ bookingId, tourId, tourSlug }: BookingChatPan
         )}
       </button>
 
-      {/* Chat panel */}
+      {/* Chat panel — full screen on mobile, floating on desktop */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-40 flex h-120 w-90 flex-col overflow-hidden rounded-2xl border border-charcoal/10 bg-white shadow-2xl sm:w-100">
+        <div className="fixed inset-0 z-40 flex flex-col bg-white sm:inset-auto sm:bottom-24 sm:right-6 sm:h-120 sm:w-90 sm:overflow-hidden sm:rounded-2xl sm:border sm:border-charcoal/10 sm:shadow-2xl md:h-128 md:w-100">
           {/* Header */}
           <div className="flex items-center gap-3 border-b border-charcoal/5 bg-charcoal px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="rounded-lg p-1 text-diamond/60 transition-colors hover:text-diamond sm:hidden"
+              aria-label="Close chat"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold text-xs font-bold text-charcoal">
               SD
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-diamond">Concierge Chat</p>
-              <p className="text-[10px] text-diamond/50">We typically reply within a few hours</p>
+              <p className="truncate text-[10px] text-diamond/50">
+                {tourSlug
+                  ? tourSlug.replace(/-/g, " ")
+                  : "We typically reply within a few hours"}
+              </p>
             </div>
+            {tourId && (
+              <span className="hidden shrink-0 rounded bg-gold/20 px-1.5 py-0.5 text-[9px] font-medium text-gold sm:inline-block">
+                Tour linked
+              </span>
+            )}
           </div>
 
           {/* Messages */}
-          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+          <div className="flex-1 overflow-y-auto overscroll-contain bg-[#f8f7f4] px-3 py-3">
             {loading ? (
               <div className="flex h-full items-center justify-center">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-gold border-t-transparent" />
@@ -163,20 +183,22 @@ export function BookingChatPanel({ bookingId, tourId, tourSlug }: BookingChatPan
                 </p>
               </div>
             ) : (
-              messages.map((msg) => (
-                <ChatBubble
-                  key={msg._id}
-                  message={msg}
-                  isOwn={msg.senderUid === uid}
-                />
-              ))
+              <div className="space-y-1.5">
+                {messages.map((msg) => (
+                  <ChatBubble
+                    key={msg._id}
+                    message={msg}
+                    isOwn={msg.senderUid === uid}
+                  />
+                ))}
+              </div>
             )}
             <div ref={chatEndRef} />
           </div>
 
           {/* Input */}
-          <div className="border-t border-charcoal/5 px-3 py-3">
-            <div className="flex items-center gap-2">
+          <div className="border-t border-charcoal/5 bg-white px-3 py-2" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
+            <div className="flex items-end gap-2">
               <input
                 ref={inputRef}
                 type="text"
@@ -186,13 +208,13 @@ export function BookingChatPanel({ bookingId, tourId, tourSlug }: BookingChatPan
                 placeholder="Type a message…"
                 maxLength={2000}
                 disabled={sending}
-                className="flex-1 rounded-full border border-charcoal/10 bg-charcoal/2 px-4 py-2.5 text-sm text-charcoal placeholder:text-charcoal/30 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold disabled:opacity-50"
+                className="flex-1 rounded-full border border-charcoal/10 bg-charcoal/2 px-4 py-2.5 text-sm text-charcoal placeholder:text-charcoal/30 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/30 disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={!input.trim() || sending}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-charcoal transition-colors hover:bg-gold/90 disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-charcoal transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-40"
                 aria-label="Send message"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

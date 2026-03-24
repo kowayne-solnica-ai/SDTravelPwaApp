@@ -226,3 +226,27 @@ export async function getClientDisplayName(uid: string): Promise<string> {
   }
   return uid
 }
+
+/**
+ * Fetch a user's profile summary from users -> profile -> main.
+ * Returns display name, email, phone, and avatar for richer inbox display.
+ */
+export async function getClientProfile(
+  uid: string,
+): Promise<{ displayName: string; email?: string; phone?: string; avatar?: string }> {
+  try {
+    const snap = await getDoc(doc(db, "users", uid, "profile", "main"))
+    if (snap.exists()) {
+      const data = snap.data()
+      return {
+        displayName: data.displayName || data.email || uid,
+        email: data.email,
+        phone: data.phone,
+        avatar: data.avatar,
+      }
+    }
+  } catch {
+    // Firestore read failed — fall back to UID
+  }
+  return { displayName: uid }
+}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useMockMode } from "@/hooks/useMockMode"
 import { useChat } from "@/hooks/useChat"
@@ -20,6 +21,11 @@ export default function ChatPage() {
 function ChatContent() {
   const { user } = useAuth()
   const { isMockMode } = useMockMode()
+  const searchParams = useSearchParams()
+
+  // Optional tour context from query params (e.g. ?tourId=xxx&tourSlug=yyy)
+  const tourId = searchParams?.get("tourId") ?? undefined
+  const tourSlug = searchParams?.get("tourSlug") ?? undefined
 
   // For now, use a single room derived from the user's UID.
   const roomId = isMockMode
@@ -31,7 +37,11 @@ function ChatContent() {
     messages: liveMessages,
     loading: liveLoading,
     send: liveSend,
-  } = useChat(isMockMode ? null : roomId, isMockMode ? null : (user?.uid ?? null))
+  } = useChat(
+    isMockMode ? null : roomId,
+    isMockMode ? null : (user?.uid ?? null),
+    { tourId, tourSlug },
+  )
 
   const [mockMessages, setMockMessages] = useState<ChatMessage[]>(mockChatMessages)
   const [draft, setDraft] = useState("")
@@ -80,18 +90,29 @@ function ChatContent() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-14rem)] flex-col">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-serif text-2xl font-bold text-charcoal">
-          Concierge Chat
-        </h1>
-        <span className="text-xs text-charcoal/40">
-          {messages.length} message{messages.length !== 1 ? "s" : ""}
+    <div className="flex h-[calc(100dvh-14rem)] flex-col md:h-[calc(100dvh-14rem)]">
+      {/* ── Native-style header ──────────────────────── */}
+      <div className="flex items-center gap-3 border-b border-charcoal/5 bg-white px-4 py-3 md:rounded-t-2xl">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold text-sm font-bold text-charcoal">
+          SD
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-charcoal">
+            Diamond Concierge
+          </p>
+          <p className="text-[11px] text-charcoal/40">
+            {tourSlug
+              ? tourSlug.replace(/-/g, " ")
+              : "We typically reply within a few hours"}
+          </p>
+        </div>
+        <span className="rounded-full bg-charcoal/5 px-2 py-0.5 text-[10px] text-charcoal/40">
+          {messages.length} msg{messages.length !== 1 ? "s" : ""}
         </span>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 space-y-3 overflow-y-auto rounded-sm border border-sand/20 bg-white p-4">
+      {/* ── Messages ─────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto overscroll-contain bg-[#f8f7f4] px-3 py-4 md:px-4">
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
@@ -102,9 +123,13 @@ function ChatContent() {
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <div className="max-w-xs text-center">
-              <div className="mb-3 text-3xl text-gold/30">◇</div>
-              <p className="text-sm text-charcoal/50">
-                Start the conversation — your Diamond concierge is standing by.
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gold/10">
+                <svg className="h-7 w-7 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-charcoal/60">
+                Start the conversation
               </p>
               <p className="mt-1 text-xs text-charcoal/30">
                 Ask about tours, custom itineraries, or special requests.
@@ -112,41 +137,50 @@ function ChatContent() {
             </div>
           </div>
         ) : (
-          messages.map((msg) => (
-            <ChatBubble
-              key={msg._id}
-              message={msg}
-              isOwn={msg.senderUid === currentUid}
-            />
-          ))
+          <div className="space-y-1.5">
+            {messages.map((msg) => (
+              <ChatBubble
+                key={msg._id}
+                message={msg}
+                isOwn={msg.senderUid === currentUid}
+              />
+            ))}
+          </div>
         )}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          handleSend()
-        }}
-        className="mt-3 flex gap-2"
-      >
-        <input
-          type="text"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Type a message…"
-          maxLength={2000}
-          className="flex-1 rounded-sm border border-sand/30 bg-white px-4 py-3 text-sm text-charcoal placeholder:text-charcoal/40 focus:border-gold focus:ring-1 focus:ring-gold"
-        />
-        <button
-          type="submit"
-          disabled={!draft.trim()}
-          className="rounded-sm bg-gold px-6 py-3 text-sm font-semibold uppercase tracking-wider text-charcoal transition-colors hover:bg-gold-400 disabled:opacity-50"
+      {/* ── Native-style input area ──────────────────── */}
+      <div className="border-t border-charcoal/5 bg-white px-3 py-2 md:rounded-b-2xl" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            handleSend()
+          }}
+          className="flex items-end gap-2"
         >
-          Send
-        </button>
-      </form>
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Type a message…"
+              maxLength={2000}
+              className="w-full rounded-full border border-charcoal/10 bg-charcoal/2 px-4 py-2.5 pr-4 text-sm text-charcoal placeholder:text-charcoal/30 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/30"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={!draft.trim()}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-charcoal transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-40"
+            aria-label="Send message"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+            </svg>
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

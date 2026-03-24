@@ -2,12 +2,30 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Admin helper function ──────────────────────────────────────────────
+    // Accepts either a custom-claim token (granted via grant-admin.mjs) OR
+    // a document in /admins/{uid} — whichever is present grants admin access.
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.admin == true ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // ── Admins collection ──────────────────────────────────────────────────
+    // Only admins can read the admins list. Only server-side writes are allowed
+    // (allow write: if false keeps this safe from client manipulation).
+    match /admins/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // ── User Profiles & Wishlists ──────────────────────────────────────────
     // Users can only read/write their own profile and saved diamonds.
     // Admins (agents) can read any profile for the concierge inbox.
     match /users/{uid}/{document=**} {
       allow read: if request.auth != null &&
-        (request.auth.uid == uid || request.auth.token.admin == true);
+        (request.auth.uid == uid || isAdmin());
       allow write: if request.auth != null && request.auth.uid == uid;
     }
 
@@ -16,7 +34,7 @@ service cloud.firestore {
     // Booking-specific rooms use "booking_{bookingId}" with clientUid field.
     match /chatRooms/{roomId} {
       // Admins (agents) can read and write all chat rooms for the concierge inbox
-      allow read, write: if request.auth != null && request.auth.token.admin == true;
+      allow read, write: if isAdmin();
 
       // Allow if this is the user's own concierge room, or a booking room
       // where they are the client, or they are assigned as agent
@@ -32,7 +50,7 @@ service cloud.firestore {
       // Messages within a chat room
       match /messages/{messageId} {
         // Admins can read and write all messages
-        allow read, write: if request.auth != null && request.auth.token.admin == true;
+        allow read, write: if isAdmin();
 
         allow read: if request.auth != null &&
           (roomId == ('room_' + request.auth.uid) ||
@@ -53,8 +71,7 @@ service cloud.firestore {
     // Clients read their own bookings. Admins read all. Writes are server-only.
     match /bookings/{bookingId} {
       allow read: if request.auth != null &&
-        (resource.data.uid == request.auth.uid ||
-         request.auth.token.admin == true);
+        (resource.data.uid == request.auth.uid || isAdmin());
       allow write: if false;
     }
   }

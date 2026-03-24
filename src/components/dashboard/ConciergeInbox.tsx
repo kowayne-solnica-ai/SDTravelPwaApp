@@ -12,7 +12,7 @@ import {
   sendMessage,
   markMessagesRead,
   updateRoomStatus,
-  getClientDisplayName,
+  getClientProfile,
 } from "@/lib/firebase/chat"
 import {
   mockChatRooms,
@@ -73,6 +73,7 @@ export function ConciergeInbox() {
 
   // ── Client display names (live mode) ────────────────────────────────────
   const [clientNames, setClientNames] = useState<Record<string, string>>({})
+  const [clientEmails, setClientEmails] = useState<Record<string, string>>({})
   const fetchedUidsRef = useRef<Set<string>>(new Set())
 
   // ── Latest message per room (for preview text in live mode) ─────────────
@@ -131,13 +132,20 @@ export function ConciergeInbox() {
     let cancelled = false
     Promise.all(
       unique.map((uid) =>
-        getClientDisplayName(uid).then((name) => [uid, name] as const),
+        getClientProfile(uid).then((profile) => [uid, profile] as const),
       ),
     ).then((results) => {
       if (cancelled) return
       setClientNames((prev) => {
         const next = { ...prev }
-        for (const [uid, name] of results) next[uid] = name
+        for (const [uid, profile] of results) next[uid] = profile.displayName
+        return next
+      })
+      setClientEmails((prev) => {
+        const next = { ...prev }
+        for (const [uid, profile] of results) {
+          if (profile.email) next[uid] = profile.email
+        }
         return next
       })
     })
@@ -339,6 +347,22 @@ export function ConciergeInbox() {
                           : `Tour: ${room.tourId}`}
                       </p>
                     )}
+                    {/* Room type badge + tourId */}
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <span className={[
+                        "inline-flex items-center rounded px-1 py-px text-[9px] font-semibold uppercase tracking-wider",
+                        room._id.startsWith("booking_")
+                          ? "bg-gold/10 text-gold"
+                          : "bg-charcoal/5 text-charcoal/40",
+                      ].join(" ")}>
+                        {room._id.startsWith("booking_") ? "Booking" : "General"}
+                      </span>
+                      {room.tourId && (
+                        <span className="truncate text-[9px] text-charcoal/30" title={`tourId: ${room.tourId}`}>
+                          {room.tourId}
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-0.5 truncate text-xs text-charcoal/40">
                       {lastMessagePreview(room._id)}
                     </p>
@@ -380,6 +404,11 @@ export function ConciergeInbox() {
                 <p className="truncate text-sm font-semibold text-charcoal">
                   {clientName(selectedRoom.clientUid)}
                 </p>
+                {!isMockMode && clientEmails[selectedRoom.clientUid] && (
+                  <p className="truncate text-[10px] text-charcoal/30">
+                    {clientEmails[selectedRoom.clientUid]}
+                  </p>
+                )}
                 <p className="text-[11px] text-charcoal/40">
                   {selectedRoom.tourSlug
                     ? selectedRoom.tourSlug.replace(/-/g, " ")
@@ -435,7 +464,7 @@ export function ConciergeInbox() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto overscroll-contain bg-[#f8f7f4] p-3 md:p-4">
               {messagesLoading ? (
                 <div className="flex h-full items-center justify-center">
                   <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gold border-t-transparent" />
@@ -445,20 +474,22 @@ export function ConciergeInbox() {
                   <p className="text-sm text-charcoal/40">No messages yet — start the conversation.</p>
                 </div>
               ) : (
-                messages.map((msg) => (
-                  <ChatBubble
-                    key={msg._id}
-                    message={msg}
-                    isOwn={msg.senderRole === "agent"}
-                  />
-                ))
+                <div className="space-y-1.5">
+                  {messages.map((msg) => (
+                    <ChatBubble
+                      key={msg._id}
+                      message={msg}
+                      isOwn={msg.senderRole === "agent"}
+                    />
+                  ))}
+                </div>
               )}
               <div ref={bottomRef} />
             </div>
 
             {/* Compose */}
-            <div className="border-t border-charcoal/5 p-3">
-              <div className="flex items-center gap-2">
+            <div className="border-t border-charcoal/5 bg-white px-3 py-2" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
+              <div className="flex items-end gap-2">
                 <input
                   type="text"
                   value={draft}
@@ -470,13 +501,13 @@ export function ConciergeInbox() {
                     }
                   }}
                   placeholder="Type a reply…"
-                  className="flex-1 rounded-xl border border-charcoal/10 bg-charcoal/2 px-4 py-2.5 text-sm text-charcoal placeholder:text-charcoal/30 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/30"
+                  className="flex-1 rounded-full border border-charcoal/10 bg-charcoal/2 px-4 py-2.5 text-sm text-charcoal placeholder:text-charcoal/30 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/30"
                   maxLength={2000}
                 />
                 <button
                   onClick={handleSend}
                   disabled={!draft.trim()}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold text-white transition-colors hover:bg-gold/90 disabled:opacity-40"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gold text-white transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-40"
                   aria-label="Send message"
                 >
                   <Send className="h-4 w-4" />

@@ -1,12 +1,23 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { subscribeToMessages, sendMessage } from "@/lib/firebase/chat"
+import {
+  ensureRoomExists,
+  subscribeToMessages,
+  sendMessage,
+} from "@/lib/firebase/chat"
 import type { ChatMessage } from "@/types/chat"
 
-export function useChat(roomId: string | null, senderUid: string | null) {
+export function useChat(
+  roomId: string | null,
+  senderUid: string | null,
+  options?: { tourId?: string; tourSlug?: string },
+) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
+
+  const tourId = options?.tourId
+  const tourSlug = options?.tourSlug
 
   useEffect(() => {
     if (!roomId || !senderUid) {
@@ -16,13 +27,28 @@ export function useChat(roomId: string | null, senderUid: string | null) {
     }
 
     setLoading(true)
-    const unsub = subscribeToMessages(roomId, senderUid, (msgs) => {
-      setMessages(msgs)
-      setLoading(false)
-    })
+    let cancelled = false
+    let unsubscribe: (() => void) | null = null
 
-    return unsub
-  }, [roomId, senderUid])
+    // Ensure room doc exists before subscribing so it appears in the agent inbox
+    ensureRoomExists(roomId, senderUid, { tourId, tourSlug })
+      .then(() => {
+        if (cancelled) return
+        unsubscribe = subscribeToMessages(roomId, senderUid, (msgs) => {
+          setMessages(msgs)
+          setLoading(false)
+        })
+      })
+      .catch((err) => {
+        console.error("[useChat] Room init failed:", err)
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
+  }, [roomId, senderUid, tourId, tourSlug])
 
   const send = useCallback(
     async (text: string) => {
