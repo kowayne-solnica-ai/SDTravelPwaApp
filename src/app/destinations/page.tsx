@@ -5,11 +5,12 @@ import { MapPin, Compass, Sun } from "lucide-react"
 import { getDestinations } from "@/lib/wix/tours"
 import { faker } from "@/lib/demo/faker"
 import { FadeSlide, FadeSlideChild } from "@/components/ui/FadeSlide"
+import { BRAND } from "@/lib/config/brand"
 
 export const revalidate = 60
 
 export const metadata: Metadata = {
-  title: "Destinations | Sand Diamonds Travel",
+  title: `Destinations | ${BRAND.name}`,
   description:
     "Explore our curated collection of luxury travel destinations — from Caribbean " +
     "beaches to African safaris and European cultural escapes.",

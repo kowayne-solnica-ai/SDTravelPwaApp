@@ -1,7 +1,12 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import type { ItineraryDay } from "@/types/tour"
-import { ItineraryTimeline } from "@/components/tours/ItineraryTimeline"
+
+const ItineraryTimeline = dynamic(
+  () => import("@/components/tours/ItineraryTimeline").then(m => m.ItineraryTimeline),
+  { ssr: false }
+)
 
 interface ItinerarySectionProps {
   itinerary: ItineraryDay[]

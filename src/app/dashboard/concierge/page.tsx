@@ -5,8 +5,18 @@ import { AnimatePresence } from "framer-motion"
 import { useAuth } from "@/hooks/useAuth"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { BookingCard } from "@/components/dashboard/BookingCard"
-import { BookingDetailModal } from "@/components/dashboard/BookingDetailModal"
-import { ConciergeInbox } from "@/components/dashboard/ConciergeInbox"
+import dynamic from "next/dynamic"
+
+const BookingDetailModal = dynamic(
+  () => import("@/components/dashboard/BookingDetailModal").then(m => ({ default: m.BookingDetailModal })),
+  { ssr: false },
+)
+
+const ConciergeInbox = dynamic(
+  () => import("@/components/dashboard/ConciergeInbox").then(m => ({ default: m.ConciergeInbox })),
+  { ssr: false },
+)
+
 import { auth } from "@/lib/firebase/client"
 import type { EnrichedBooking, BookingStatus } from "@/types/booking"
 

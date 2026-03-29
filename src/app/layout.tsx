@@ -7,6 +7,7 @@ import IOSInstallPrompt from "@/components/pwa/IOSInstallPrompt";
 import OfflineBanner from "@/components/pwa/OfflineBanner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { MockModeProvider } from "@/hooks/useMockMode";
+import { BRAND } from "@/lib/config/brand";
 import "@/styles/globals.css";
 
 // ---------------------------------------------------------------------------
@@ -43,15 +44,15 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Sand Diamonds",
+    title: BRAND.name,
   },
   title: {
-    default: "Sand Diamonds Travel | Bespoke Luxury Concierge",
-    template: "%s | Sand Diamonds Travel",
+    default: `${BRAND.name} | Bespoke Luxury Concierge`,
+    template: `%s | ${BRAND.name}`,
   },
   description:
     "Handcrafted luxury travel experiences. From Caribbean escapes to " +
-    "African safaris — Sand Diamonds curates bespoke itineraries with " +
+    `African safaris — ${BRAND.name} curates bespoke itineraries with ` +
     "concierge-level attention to every detail.",
   keywords: [
     "luxury travel",
@@ -59,10 +60,10 @@ export const metadata: Metadata = {
     "concierge travel service",
     "premium vacation packages",
     "luxury Caribbean holidays",
-    "Sand Diamonds Travel",
+    BRAND.name,
   ],
-  authors: [{ name: "Sand Diamonds Travel" }],
-  creator: "Sand Diamonds Travel",
+  authors: [{ name: BRAND.name }],
+  creator: BRAND.name,
   openGraph: {
     type: "website",
     locale: "en_US",

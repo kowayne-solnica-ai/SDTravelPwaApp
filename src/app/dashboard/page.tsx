@@ -1,19 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { useMockMode } from "@/hooks/useMockMode"
+import { useUserBookings } from "@/hooks/useUserBookings"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { Button } from "@/components/ui/Button"
 import { TripCard } from "@/components/dashboard/TripCard"
 import Link from "next/link"
-import { collection, query, where, orderBy, onSnapshot, limit } from "firebase/firestore"
-import { db } from "@/lib/firebase/client"
 import { formatPrice } from "@/lib/utils/format"
-import type { Booking } from "@/types/booking"
 import {
   mockUser,
-  mockBookings,
   mockBookingStats,
   mockSavedDiamonds,
   mockActivity,
@@ -43,42 +39,7 @@ export default function DashboardPage() {
 function DashboardContent() {
   const { user, signOut } = useAuth()
   const { isMockMode } = useMockMode()
-
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (isMockMode) {
-      setBookings(mockBookings)
-      setLoading(false)
-      return
-    }
-
-    if (!user) {
-      setBookings([])
-      setLoading(false)
-      return
-    }
-
-    const ref = collection(db, "bookings")
-    const q = query(
-      ref,
-      where("uid", "==", user.uid),
-      orderBy("createdAt", "desc"),
-      limit(10),
-    )
-
-    const unsub = onSnapshot(q, (snap) => {
-      const items: Booking[] = snap.docs.map((d) => ({
-        _id: d.id,
-        ...(d.data() as Omit<Booking, "_id">),
-      }))
-      setBookings(items)
-      setLoading(false)
-    })
-
-    return unsub
-  }, [user, isMockMode])
+  const { bookings, loading } = useUserBookings(10)
 
   const displayName = isMockMode
     ? mockUser.displayName

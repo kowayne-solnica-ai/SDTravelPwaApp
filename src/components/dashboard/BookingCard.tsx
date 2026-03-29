@@ -1,86 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { formatPrice } from "@/lib/utils/format"
+import {
+  STATUS_ACTIONS,
+  STATUS_BADGE,
+  STATUS_ICON,
+  STATUS_LABEL,
+} from "@/lib/rules/status-rules"
+import { getTourGradient } from "@/lib/utils/tour-gradients"
 import type { EnrichedBooking, BookingStatus } from "@/types/booking"
-
-// Simple in-memory cache so multiple cards with the same tourId don't re-fetch
-const heroCache = new Map<string, string | null>()
-const inflight = new Map<string, Promise<string | null>>()
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const STATUS_BADGE: Record<BookingStatus, string> = {
-  hold: "bg-amber-100 text-amber-800 border-amber-200",
-  pending: "bg-sand-50 text-sand-600 border-sand-200",
-  awaiting_payment: "bg-purple-100 text-purple-800 border-purple-200",
-  confirmed: "bg-green-100 text-green-800 border-green-200",
-  completed: "bg-ocean-50 text-ocean border-ocean-200",
-  cancelled: "bg-red-100 text-red-700 border-red-200",
-}
-
-const STATUS_ICON: Record<BookingStatus, string> = {
-  hold: "◇",
-  pending: "◈",
-  awaiting_payment: "⧫",
-  confirmed: "✓",
-  completed: "★",
-  cancelled: "✕",
-}
-
-const STATUS_LABEL: Record<BookingStatus, string> = {
-  hold: "Hold",
-  pending: "Pending",
-  awaiting_payment: "Awaiting Payment",
-  confirmed: "Confirmed",
-  completed: "Completed",
-  cancelled: "Cancelled",
-}
-
-const STATUS_ACTIONS: Record<
-  string,
-  { label: string; to: BookingStatus; style: string }[]
-> = {
-  hold: [
-    { label: "Approve", to: "confirmed", style: "bg-green-600 hover:bg-green-700 text-white" },
-    { label: "Awaiting Payment", to: "awaiting_payment", style: "bg-purple-600 hover:bg-purple-700 text-white" },
-    { label: "Decline", to: "cancelled", style: "bg-red-600 hover:bg-red-700 text-white" },
-  ],
-  pending: [
-    { label: "Confirm", to: "confirmed", style: "bg-green-600 hover:bg-green-700 text-white" },
-    { label: "Awaiting Payment", to: "awaiting_payment", style: "bg-purple-600 hover:bg-purple-700 text-white" },
-    { label: "Cancel", to: "cancelled", style: "bg-red-600 hover:bg-red-700 text-white" },
-  ],
-  awaiting_payment: [
-    { label: "Confirm Payment", to: "confirmed", style: "bg-green-600 hover:bg-green-700 text-white" },
-    { label: "Cancel", to: "cancelled", style: "bg-red-600 hover:bg-red-700 text-white" },
-  ],
-  confirmed: [
-    { label: "Complete", to: "completed", style: "bg-ocean hover:bg-ocean/90 text-white" },
-    { label: "Cancel", to: "cancelled", style: "bg-red-600 hover:bg-red-700 text-white" },
-  ],
-}
-
-// Gradient backgrounds per tour keyword (fallback when no hero image)
-function getTourGradient(title: string): string {
-  const t = title.toLowerCase()
-  if (t.includes("sahara") || t.includes("desert"))
-    return "from-amber-600 via-orange-700 to-red-800"
-  if (t.includes("cockpit") || t.includes("country") || t.includes("jungle"))
-    return "from-emerald-500 via-green-700 to-teal-800"
-  if (t.includes("ocean") || t.includes("beach") || t.includes("coast") || t.includes("island"))
-    return "from-sky-500 via-blue-600 to-indigo-800"
-  if (t.includes("mountain") || t.includes("peak") || t.includes("alpine"))
-    return "from-slate-500 via-gray-700 to-zinc-800"
-  if (t.includes("city") || t.includes("urban") || t.includes("metro"))
-    return "from-violet-500 via-purple-700 to-fuchsia-800"
-  if (t.includes("safari") || t.includes("wild"))
-    return "from-yellow-600 via-amber-700 to-orange-800"
-  return "from-sand via-gold to-sand-600"
-}
 
 function getInitials(name?: string, uid?: string): string {
   if (name) {
@@ -104,6 +34,7 @@ interface BookingCardProps {
   onUpdateStatus: (id: string, status: BookingStatus) => void
   onOpenDetail: (booking: EnrichedBooking) => void
   showUser?: boolean
+  heroImage?: string | null
 }
 
 export function BookingCard({
@@ -112,52 +43,13 @@ export function BookingCard({
   onUpdateStatus,
   onOpenDetail,
   showUser = true,
+  heroImage: heroImageProp,
 }: BookingCardProps) {
   const [pendingAction, setPendingAction] = useState<{ label: string; to: BookingStatus } | null>(null)
   const actions = STATUS_ACTIONS[booking.status] ?? []
   const initials = getInitials(booking.userName, booking.uid)
 
-  // Resolve hero image from Wix CMS by tourId (collection item _id)
-  const [resolvedHero, setResolvedHero] = useState<string | null>(
-    () => (booking.tourId ? heroCache.get(booking.tourId) ?? null : null),
-  )
-
-  useEffect(() => {
-    const tourId = booking.tourId
-    if (!tourId) return
-
-    // Already resolved
-    if (heroCache.has(tourId)) {
-      setResolvedHero(heroCache.get(tourId) ?? null)
-      return
-    }
-
-    // Deduplicate in-flight requests
-    let req = inflight.get(tourId)
-    if (!req) {
-      req = fetch("/api/bookings/resolve-heroes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tourIds: [tourId] }),
-      })
-        .then((r) => (r.ok ? r.json() : {}))
-        .then((map: Record<string, string | null>) => {
-          const url = map[tourId] ?? null
-          heroCache.set(tourId, url)
-          return url
-        })
-        .catch(() => {
-          heroCache.set(tourId, null)
-          return null
-        })
-        .finally(() => inflight.delete(tourId))
-      inflight.set(tourId, req)
-    }
-
-    req.then((url) => setResolvedHero(url))
-  }, [booking.tourId])
-
-  const heroImage = resolvedHero || booking.tourHeroImage || null
+  const heroImage = heroImageProp ?? booking.tourHeroImage ?? null
 
   return (
     <motion.div
