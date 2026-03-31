@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTourBySlug, getAllTourSlugs } from "@/lib/wix/tours";
 import { generateTourMetadata } from "@/lib/utils/seo";
+import { resolveAccommodationImages } from "@/lib/services/tours.service";
 import { TourDetails } from "@/components/tours/TourDetails";
 
 // ---------------------------------------------------------------------------
@@ -93,10 +94,15 @@ export default async function TourDetailPage({ params }: TourPageProps) {
 
   const { tour, itinerary, destination, accommodations } = result;
 
+  // Resolve missing accommodation images server-side
+  const remoteAccImages = accommodations.length > 0
+    ? await resolveAccommodationImages(accommodations)
+    : {};
+
   return (
     <>
       <TourJsonLd tour={tour} />
-      <TourDetails tour={tour} itinerary={itinerary} destination={destination} accommodations={accommodations} />
+      <TourDetails tour={tour} itinerary={itinerary} destination={destination} accommodations={accommodations} remoteAccImages={remoteAccImages} />
     </>
   );
 }

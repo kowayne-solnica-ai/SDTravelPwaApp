@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { BRAND } from "@/lib/config/brand"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/Button"
 
@@ -75,7 +76,7 @@ export default function SignInPage() {
       <div className="text-center">
         <Link href="/" className="inline-block">
           <span className="font-serif text-3xl font-bold text-gold">
-            Sand Diamonds Travel
+            {BRAND.name}
           </span>
         </Link>
         <p className="mt-2 text-sm text-diamond/50">

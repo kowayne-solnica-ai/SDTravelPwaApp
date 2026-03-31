@@ -4,6 +4,7 @@ import { useState, useEffect, type FormEvent } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useAuth } from "@/hooks/useAuth"
+import { submitContactForm } from "@/lib/api/contact"
 import { FadeSlide, FadeSlideChild } from "@/components/ui/FadeSlide"
 
 type FormStatus = "idle" | "submitting" | "success" | "error"
@@ -55,24 +56,8 @@ export function ContactForm() {
     setErrorMsg("")
 
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      })
-
-      let data: Record<string, unknown>
-      try {
-        data = await res.json()
-      } catch {
-        throw new Error("Server error — please try again later.")
-      }
-
-      if (!res.ok) {
-        throw new Error((data.error as string) ?? "Something went wrong.")
-      }
-
-      setIsExistingUser((data.isExistingUser as boolean) ?? false)
+      const result = await submitContactForm(form)
+      setIsExistingUser(result.isExistingUser ?? false)
       setStatus("success")
       setForm(INITIAL)
     } catch (err) {

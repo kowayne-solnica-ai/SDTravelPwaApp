@@ -1,16 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { useMockMode } from "@/hooks/useMockMode"
+import { useUserBookings } from "@/hooks/useUserBookings"
 import { AuthGuard } from "@/components/auth/AuthGuard"
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore"
-import { db } from "@/lib/firebase/client"
 import { BookingCard } from "@/components/dashboard/BookingCard"
 import { Button } from "@/components/ui/Button"
-import { mockBookings } from "@/mocks"
-import type { Booking, BookingStatus, EnrichedBooking } from "@/types/booking"
+import type { BookingStatus, EnrichedBooking } from "@/types/booking"
 
 const FILTER_OPTIONS: { label: string; value: BookingStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -33,39 +31,8 @@ function BookingsContent() {
   const { isMockMode } = useMockMode()
   const router = useRouter()
 
-  const [bookings, setBookings] = useState<EnrichedBooking[]>([])
-  const [loading, setLoading] = useState(true)
+  const { bookings, loading } = useUserBookings()
   const [filter, setFilter] = useState<BookingStatus | "all">("all")
-
-  useEffect(() => {
-    if (isMockMode) {
-      setBookings(mockBookings)
-      setLoading(false)
-      return
-    }
-
-    if (!user) {
-      setBookings([])
-      setLoading(false)
-      return
-    }
-
-    const ref = collection(db, "bookings")
-    const q = query(ref, where("uid", "==", user.uid), orderBy("createdAt", "desc"))
-
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({
-        _id: d.id,
-        ...(d.data() as Omit<Booking, "_id">),
-      })) as EnrichedBooking[]
-      setBookings(items)
-      setLoading(false)
-    })
-
-    return unsub
-  }, [user, isMockMode])
-
-  // Image enrichment is now handled inside BookingCard itself via tourId lookup
 
   const filtered =
     filter === "all" ? bookings : bookings.filter((b) => b.status === filter)

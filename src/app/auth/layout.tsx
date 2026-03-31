@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
+import { BRAND } from "@/lib/config/brand"
 
 export const metadata: Metadata = {
-  title: "Sign In — Sand Diamonds Travel",
+  title: `Sign In — ${BRAND.name}`,
   description: "Access your luxury travel dashboard, bookings, and concierge chat.",
 }
 

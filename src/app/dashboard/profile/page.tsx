@@ -3,13 +3,12 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { useMockMode } from "@/hooks/useMockMode"
+import { useProfile } from "@/hooks/useProfile"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { Button } from "@/components/ui/Button"
 import Image from "next/image"
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore"
-import { db } from "@/lib/firebase/client"
 import { mockUserProfile } from "@/mocks"
-import type { UserProfile, UserPreferences } from "@/types/user"
+import type { UserPreferences } from "@/types/user"
 
 export default function ProfilePage() {
   return (
@@ -35,10 +34,8 @@ const BUDGET_RANGES: NonNullable<UserPreferences["budgetRange"]>[] = [
 function ProfileContent() {
   const { user, signOut } = useAuth()
   const { isMockMode } = useMockMode()
+  const { profile, loading, saving, save } = useProfile()
 
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
 
   // Editable fields
@@ -49,69 +46,37 @@ function ProfileContent() {
 
   useEffect(() => {
     if (isMockMode) {
-      setProfile(mockUserProfile)
       setDisplayName(mockUserProfile.displayName)
       setPhone(mockUserProfile.phone ?? "")
       setTravelStyle(mockUserProfile.preferences?.travelStyle)
       setBudgetRange(mockUserProfile.preferences?.budgetRange)
-      setLoading(false)
       return
     }
 
-    if (!user) {
-      setLoading(false)
-      return
+    if (profile) {
+      setDisplayName(profile.displayName ?? "")
+      setPhone(profile.phone ?? "")
+      setTravelStyle(profile.preferences?.travelStyle)
+      setBudgetRange(profile.preferences?.budgetRange)
+    } else if (user) {
+      setDisplayName(user.displayName ?? "")
     }
-
-    // Fetch profile from Firestore
-    const ref = doc(db, "users", user.uid, "profile", "main")
-    getDoc(ref)
-      .then((snap) => {
-        if (snap.exists()) {
-          const data = snap.data() as UserProfile
-          setProfile(data)
-          setDisplayName(data.displayName ?? "")
-          setPhone(data.phone ?? "")
-          setTravelStyle(data.preferences?.travelStyle)
-          setBudgetRange(data.preferences?.budgetRange)
-        } else {
-          // Use Firebase auth data as fallback
-          setDisplayName(user.displayName ?? "")
-        }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [user, isMockMode])
+  }, [profile, user, isMockMode])
 
   const handleSave = async () => {
     if (isMockMode || !user) return
 
-    setSaving(true)
     setSuccess(false)
-
-    try {
-      const ref = doc(db, "users", user.uid, "profile", "main")
-      // Use set with merge to create the document if it doesn't exist
-      await setDoc(
-        ref,
-        {
-          displayName,
-          phone,
-          preferences: {
-            travelStyle: travelStyle ?? null,
-            budgetRange: budgetRange ?? null,
-          },
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true },
-      )
-      setSuccess(true)
-      setTimeout(() => setSuccess(false), 3000)
-    } catch (err) {
-      console.error("Profile save failed:", err)
-    } finally {
-      setSaving(false)
-    }
+    await save({
+      displayName,
+      phone,
+      preferences: {
+        travelStyle: travelStyle ?? null,
+        budgetRange: budgetRange ?? null,
+      },
+    })
+    setSuccess(true)
+    setTimeout(() => setSuccess(false), 3000)
   }
 
   const avatarUrl = isMockMode
