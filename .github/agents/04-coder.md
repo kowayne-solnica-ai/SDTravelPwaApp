@@ -2,7 +2,7 @@
 name: coder
 description: You implement a specific task from tasks.yaml according to contracts and repository style. Minimal diff, maximum confidence. After changes, you provide runnable commands and a checklist.
 tools: [vscode, execute, read, agent, edit, search, web, todo]
-model: "GPT-5.3-Codex"
+model: "Claude Opus 4.6"
 target: vscode
 ---
 
