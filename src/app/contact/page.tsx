@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ContactForm } from "@/components/contact/ContactForm"
+import { BRAND } from "@/lib/config/brand"
 import { FadeSlide, FadeSlideChild } from "@/components/ui/FadeSlide"
 
 // ---------------------------------------------------------------------------
@@ -8,12 +9,12 @@ import { FadeSlide, FadeSlideChild } from "@/components/ui/FadeSlide"
 // ---------------------------------------------------------------------------
 
 export const metadata: Metadata = {
-  title: "Contact Us | Sand Diamonds Travel",
+  title: `Contact Us | ${BRAND.name}`,
   description:
     "Get in touch with our luxury travel concierge team. " +
     "We're here to help plan your dream trip, answer questions, or craft a bespoke itinerary.",
   openGraph: {
-    title: "Contact Us | Sand Diamonds Travel",
+    title: `Contact Us | ${BRAND.name}`,
     description:
       "Reach our concierge team for luxury travel inquiries, custom itineraries, and booking assistance.",
   },

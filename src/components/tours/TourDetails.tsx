@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -23,8 +23,13 @@ import {
   Copy,
 } from "lucide-react"
 import type { Tour, ItineraryDay, WixImage, Destination, Accommodation } from "@/types/tour"
+import dynamic from "next/dynamic"
 import { formatPrice } from "@/lib/utils/format"
-import { ItineraryTimeline } from "@/components/tours/ItineraryTimeline"
+
+const ItineraryTimeline = dynamic(
+  () => import("@/components/tours/ItineraryTimeline").then(m => m.ItineraryTimeline),
+  { ssr: false }
+)
 
 // ---------------------------------------------------------------------------
 // Mock Data — guides, testimonials
@@ -99,47 +104,14 @@ interface TourDetailsProps {
   itinerary: ItineraryDay[]
   destination?: Destination | null
   accommodations?: Accommodation[]
+  remoteAccImages?: Record<string, { src: string; alt?: string }>
 }
 
-export function TourDetails({ tour, itinerary, destination, accommodations = [] }: TourDetailsProps) {
+export function TourDetails({ tour, itinerary, destination, accommodations = [], remoteAccImages = {} }: TourDetailsProps) {
   const [liked, setLiked] = useState(false)
   const [shareTooltip, setShareTooltip] = useState(false)
   const [carouselIndex, setCarouselIndex] = useState(0)
   const [savedAccom, setSavedAccom] = useState<Set<string>>(new Set())
-  const [remoteAccImages, setRemoteAccImages] = useState<Record<string, { src: string; alt?: string }>>({})
-
-  useEffect(() => {
-    if (!accommodations || accommodations.length === 0) return
-    const DEFAULT_SRC = "/og/default.jpg"
-
-    const missing = accommodations.filter((acc) => {
-      const hasLocal =
-        (acc.image?.src && acc.image.src !== DEFAULT_SRC) ||
-        (acc.gallery && acc.gallery.length > 0 && acc.gallery[0].src && acc.gallery[0].src !== DEFAULT_SRC)
-      return !hasLocal && acc._id && !remoteAccImages[acc._id]
-    })
-
-    if (missing.length === 0) return
-
-    missing.forEach((acc) => {
-      ;(async () => {
-        try {
-          const res = await fetch(`/api/wix/debug/accommodations?id=${acc._id}`)
-          if (!res.ok) return
-          const body = await res.json()
-          const found = body?.accommodation ?? body
-          if (found?.image?.src) {
-            setRemoteAccImages((prev) => ({
-              ...prev,
-              [acc._id]: { src: found.image.src, alt: found.image.alt },
-            }))
-          }
-        } catch (e) {
-          // silent
-        }
-      })()
-    })
-  }, [accommodations, remoteAccImages])
 
   const galleryImages = tour.gallery.length > 0 ? tour.gallery : [tour.heroImage]
   const mainImage = galleryImages[0]

@@ -1,21 +1,15 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-} from "firebase/firestore"
-import { db, auth } from "@/lib/firebase/client"
-import { onAuthStateChanged, type User } from "firebase/auth"
+import { useAuth } from "@/hooks/useAuth"
+import { useUserBookings } from "@/hooks/useUserBookings"
 import { formatPrice } from "@/lib/utils/format"
 import type { Booking, BookingStatus } from "@/types/booking"
+import type { User } from "firebase/auth"
 import {
   CalendarDays,
   MapPin,
@@ -115,54 +109,19 @@ const cardVariants = {
 
 export default function MyBookingsPage() {
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [authChecked, setAuthChecked] = useState(false)
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [loading, setLoading] = useState(true)
+  const { user, loading: authLoading } = useAuth()
+  const { bookings, loading } = useUserBookings()
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // ── Auth guard ────────────────────────────────────────────────────────
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (fbUser) => {
-      setUser(fbUser)
-      setAuthChecked(true)
-      if (!fbUser) router.replace("/auth/sign-in")
-    })
-    return unsub
-  }, [router])
-
-  // ── Real-time bookings listener ───────────────────────────────────────
-  useEffect(() => {
-    if (!user) return
-
-    const ref = collection(db, "bookings")
-    const q = query(ref, where("uid", "==", user.uid), orderBy("createdAt", "desc"))
-
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const items: Booking[] = snap.docs.map((d) => ({
-          _id: d.id,
-          ...(d.data() as Omit<Booking, "_id">),
-        }))
-        setBookings(items)
-        setLoading(false)
-      },
-      (err) => {
-        console.error("[MyBookings] Listener error:", err)
-        setLoading(false)
-      },
-    )
-
-    return unsub
-  }, [user])
-
   // ── Loading / auth redirect state ─────────────────────────────────────
-  if (!authChecked || (!user && !authChecked)) {
+  if (authLoading) {
     return <FullPageLoader />
   }
 
-  if (!user) return null // Will redirect via useEffect
+  if (!user) {
+    router.replace("/auth/sign-in")
+    return null
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-charcoal">
