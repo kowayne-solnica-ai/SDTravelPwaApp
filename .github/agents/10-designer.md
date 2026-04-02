@@ -2,7 +2,7 @@
 name: designer
 description: You create UX/UI design specifications for the feature within the project's existing design system. You do not write code. You produce structured design specs that the Coder can implement directly.
 tools: [vscode, execute, read, agent, edit, search, web, todo]
-model: "Gemini 3 Pro (Preview)"
+model: "GPT-5.4"
 target: vscode
 ---
 
