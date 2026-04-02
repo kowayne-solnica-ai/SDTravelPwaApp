@@ -20,22 +20,22 @@ export default async function ToursPage() {
   const tours = await getTours();
 
   return (
-    <main className="min-h-dvh bg-diamond">
+    <main className="min-h-dvh bg-tan-50 dark:bg-ocean-deep">
       {/* ── Page Header ──────────────────────────────────────────────────── */}
-      <section className="bg-charcoal px-6 pb-16 pt-24 text-center">
+      <section className="bg-tan-100 px-6 pb-16 pt-24 text-center dark:bg-ocean-deep">
         <FadeSlide>
           <FadeSlideChild>
-            <p className="mb-3 text-xs font-medium uppercase tracking-[0.3em] text-gold">
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.3em] text-blue-chill">
               Curated Collection
             </p>
           </FadeSlideChild>
           <FadeSlideChild>
-            <h1 className="font-serif text-4xl font-bold text-diamond sm:text-5xl">
+            <h1 className="font-sans text-4xl font-bold text-ocean-deep dark:text-white sm:text-5xl">
               Our Diamond Tours
             </h1>
           </FadeSlideChild>
           <FadeSlideChild>
-            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-diamond/70">
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-ocean-deep/60 dark:text-white/60">
               Each journey is a masterpiece — meticulously designed, personally
               curated, and delivered with concierge-level attention.
             </p>
@@ -57,7 +57,7 @@ export default async function ToursPage() {
           </div>
         ) : (
           <div className="py-20 text-center">
-            <p className="font-serif text-xl text-charcoal/50">
+            <p className="font-sans text-xl text-ocean-deep/40 dark:text-white/40">
               New diamonds are being polished. Check back soon.
             </p>
           </div>
