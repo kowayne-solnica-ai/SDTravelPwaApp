@@ -1,4 +1,6 @@
 export { ItineraryTimeline } from "./ItineraryTimeline"
 export { LuxuryGallery } from "./LuxuryGallery"
+export { TestimonialCarousel } from "./TestimonialCarousel"
+export type { Testimonial } from "./TestimonialCarousel"
 export { TourCard } from "./TourCard"
 export { TourDetails } from "./TourDetails"

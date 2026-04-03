@@ -39,9 +39,12 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
+          // SAMEORIGIN (not DENY) so that same-origin iframes (e.g. /api/proxy)
+          // are allowed, while cross-origin embedding — the actual clickjacking
+          // threat — is still blocked.
           {
             key: "X-Frame-Options",
-            value: "DENY",
+            value: "SAMEORIGIN",
           },
           {
             key: "X-Content-Type-Options",

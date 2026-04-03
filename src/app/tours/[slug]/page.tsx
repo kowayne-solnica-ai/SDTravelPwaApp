@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTourBySlug, getAllTourSlugs } from "@/lib/wix/tours";
 import { generateTourMetadata } from "@/lib/utils/seo";
-import { resolveAccommodationImages } from "@/lib/services/tours.service";
+import { resolveAccommodationImages, getTestimonials } from "@/lib/services/tours.service";
 import { TourDetails } from "@/components/tours/TourDetails";
 
 // ---------------------------------------------------------------------------
@@ -99,10 +99,13 @@ export default async function TourDetailPage({ params }: TourPageProps) {
     ? await resolveAccommodationImages(accommodations)
     : {};
 
+  // Fetch tour-specific testimonials from Wix CMS
+  const testimonials = await getTestimonials(6, { tourId: tour._id });
+
   return (
     <>
       <TourJsonLd tour={tour} />
-      <TourDetails tour={tour} itinerary={itinerary} destination={destination} accommodations={accommodations} remoteAccImages={remoteAccImages} />
+      <TourDetails tour={tour} itinerary={itinerary} destination={destination} accommodations={accommodations} remoteAccImages={remoteAccImages} testimonials={testimonials} />
     </>
   );
 }

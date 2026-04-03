@@ -1,5 +1,7 @@
 import { fetchAccommodation } from "@/lib/api/wix"
+import { fetchTestimonials } from "@/lib/wix/tours"
 import type { Accommodation } from "@/types/tour"
+export type { WixTestimonial } from "@/lib/wix/tours"
 
 /**
  * Resolve missing accommodation images by fetching from Wix API.
@@ -28,4 +30,16 @@ export async function resolveAccommodationImages(
   )
 
   return results
+}
+
+/**
+ * Retrieve testimonials from Wix CMS, normalised for the TestimonialCarousel.
+ * Supports filtering by featured status and/or tour reference.
+ * Returns an empty array on failure — the carousel shows its fallback state.
+ */
+export async function getTestimonials(
+  limit = 6,
+  options?: { featuredOnly?: boolean; tourId?: string },
+) {
+  return fetchTestimonials(limit, options)
 }

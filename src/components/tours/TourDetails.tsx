@@ -15,8 +15,6 @@ import {
   Clock,
   Users,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
   Check,
   X,
   Shield,
@@ -25,6 +23,8 @@ import {
 import type { Tour, ItineraryDay, WixImage, Destination, Accommodation } from "@/types/tour"
 import dynamic from "next/dynamic"
 import { formatPrice } from "@/lib/utils/format"
+import { TestimonialCarousel } from "@/components/tours/TestimonialCarousel"
+import type { Testimonial } from "@/components/tours/TestimonialCarousel"
 
 const ItineraryTimeline = dynamic(
   () => import("@/components/tours/ItineraryTimeline").then(m => m.ItineraryTimeline),
@@ -32,7 +32,7 @@ const ItineraryTimeline = dynamic(
 )
 
 // ---------------------------------------------------------------------------
-// Mock Data — guides, testimonials
+// Mock Data — guides
 // ---------------------------------------------------------------------------
 
 interface Guide {
@@ -40,14 +40,6 @@ interface Guide {
   role: string
   avatar: string
   bio: string
-}
-
-interface Testimonial {
-  name: string
-  avatar: string
-  rating: number
-  date: string
-  text: string
 }
 
 const MOCK_GUIDES: Guide[] = [
@@ -71,30 +63,6 @@ const MOCK_GUIDES: Guide[] = [
   },
 ]
 
-const MOCK_TESTIMONIALS: Testimonial[] = [
-  {
-    name: "Victoria & James",
-    avatar: "https://images.unsplash.com/photo-1523464862212-d6631d073571?w=100&h=100&fit=crop&crop=face",
-    rating: 5,
-    date: "February 2026",
-    text: "Absolutely extraordinary. Every detail was curated to perfection — from the private game drives at sunrise to the candlelit bushveld dinner. Sand Diamonds understands luxury at a level we've never experienced.",
-  },
-  {
-    name: "Dr. Michael Chen",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-    rating: 5,
-    date: "January 2026",
-    text: "A transformative journey. The team went above and beyond to create meaningful connections with local communities. This isn't just travel — it's a life-changing experience.",
-  },
-  {
-    name: "Amelia Worthington",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-    rating: 5,
-    date: "December 2025",
-    text: "I've traveled with many luxury operators, but Sand Diamonds is in a league of their own. The attention to detail, the seamless logistics, the personal touches — simply incomparable.",
-  },
-]
-
 // ---------------------------------------------------------------------------
 // TourDetails — rich client component
 // ---------------------------------------------------------------------------
@@ -105,12 +73,13 @@ interface TourDetailsProps {
   destination?: Destination | null
   accommodations?: Accommodation[]
   remoteAccImages?: Record<string, { src: string; alt?: string }>
+  /** Testimonials fetched from Wix CMS filtered by this tour's _id */
+  testimonials?: Testimonial[]
 }
 
-export function TourDetails({ tour, itinerary, destination, accommodations = [], remoteAccImages = {} }: TourDetailsProps) {
+export function TourDetails({ tour, itinerary, destination, accommodations = [], remoteAccImages = {}, testimonials }: TourDetailsProps) {
   const [liked, setLiked] = useState(false)
   const [shareTooltip, setShareTooltip] = useState(false)
-  const [carouselIndex, setCarouselIndex] = useState(0)
   const [savedAccom, setSavedAccom] = useState<Set<string>>(new Set())
 
   const galleryImages = tour.gallery.length > 0 ? tour.gallery : [tour.heroImage]
@@ -169,13 +138,6 @@ export function TourDetails({ tour, itinerary, destination, accommodations = [],
       setShareTooltip(true)
       setTimeout(() => setShareTooltip(false), 2000)
     }
-  }
-
-  const nextTestimonial = () => {
-    setCarouselIndex((i) => (i + 1) % MOCK_TESTIMONIALS.length)
-  }
-  const prevTestimonial = () => {
-    setCarouselIndex((i) => (i - 1 + MOCK_TESTIMONIALS.length) % MOCK_TESTIMONIALS.length)
   }
 
   return (
@@ -468,96 +430,8 @@ export function TourDetails({ tour, itinerary, destination, accommodations = [],
             </div>
           </motion.section>
 
-          {/* ── Testimonials — daisyUI carousel ─────────────────────── */}
-          <motion.section
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="mt-12 mb-12"
-          >
-            <h2 className="mb-6 font-sans text-2xl font-bold text-ocean-deep">
-              Guest Reviews
-            </h2>
-            <div className="relative overflow-hidden rounded-2xl border border-tan/30 bg-white p-6 shadow-sm sm:p-8">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={carouselIndex}
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ duration: 0.35 }}
-                  className="min-h-35"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="avatar">
-                      <div className="w-12 rounded-full">
-                        <Image
-                          src={MOCK_TESTIMONIALS[carouselIndex].avatar}
-                          alt={MOCK_TESTIMONIALS[carouselIndex].name}
-                          width={48}
-                          height={48}
-                          className="rounded-full"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-ocean-deep">
-                        {MOCK_TESTIMONIALS[carouselIndex].name}
-                      </p>
-                      <p className="text-xs text-ocean-deep/50">
-                        {MOCK_TESTIMONIALS[carouselIndex].date}
-                      </p>
-                    </div>
-                    <div className="ml-auto flex gap-0.5">
-                      {Array.from({ length: MOCK_TESTIMONIALS[carouselIndex].rating }).map(
-                        (_, i) => (
-                          <Star key={i} className="h-4 w-4 fill-gold text-ocean" />
-                        )
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm italic leading-relaxed text-ocean-deep/75">
-                    &ldquo;{MOCK_TESTIMONIALS[carouselIndex].text}&rdquo;
-                  </p>
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Navigation */}
-              <div className="mt-6 flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  {MOCK_TESTIMONIALS.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCarouselIndex(i)}
-                      aria-label={`Show review ${i + 1}`}
-                      className={`h-2 rounded-full transition-all ${
-                        i === carouselIndex
-                          ? "w-6 bg-ocean"
-                          : "w-2 bg-tan/40 hover:bg-tan/60"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={prevTestimonial}
-                    aria-label="Previous review"
-                    className="btn btn-circle btn-ghost btn-sm border border-tan/30"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={nextTestimonial}
-                    aria-label="Next review"
-                    className="btn btn-circle btn-ghost btn-sm border border-tan/30"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.section>
+          {/* ── Testimonials ─────────────────────────────────────────── */}
+          <TestimonialCarousel testimonials={testimonials ?? []} />
 
           {/* ── Accommodation ─────────────────────────────────────── */}
           {accommodations.length > 0 && (

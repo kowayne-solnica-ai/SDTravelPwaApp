@@ -673,3 +673,114 @@ export async function getAccommodationById(id: string): Promise<Accommodation | 
     return null;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Testimonials
+// ---------------------------------------------------------------------------
+
+const TESTIMONIALS_COLLECTION = "Testimonials";
+
+export interface WixTestimonial {
+  _id: string;
+  /** CMS field: Name */
+  name: string;
+  /** CMS field: Avatar (Wix image URL or data URI) */
+  avatar: string;
+  /** CMS field: Text (mapped from "Text" column) */
+  quote: string;
+  /** CMS field: Date (formatted as "Month YYYY") */
+  date?: string;
+  /** CMS field: TourRef (_id of the referenced tour) */
+  tourRef?: string;
+  /** CMS field: featured */
+  featured: boolean;
+}
+
+function mapTestimonial(item: RawItem): WixTestimonial {
+  // CMS column "Text" → Wix API returns as `text`
+  const rawQuote =
+    (item.text as string) ??
+    (item.Text as string) ??
+    "";
+
+  // Wix Date fields come back as ISO strings or date strings like "2023-11-15"
+  const rawDate = item.date;
+  let date: string | undefined;
+  if (rawDate) {
+    try {
+      date = new Date(rawDate as string).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      date = String(rawDate);
+    }
+  }
+
+  // TourRef is a Wix reference field — resolve to the referenced item's _id
+  const rawRef = item.tourRef ?? item.TourRef;
+  const tourRef: string | undefined =
+    typeof rawRef === "string"
+      ? rawRef
+      : typeof rawRef === "object" && rawRef !== null
+      ? ((rawRef as Record<string, unknown>)._id as string)
+      : undefined;
+
+  // Avatar: may be a data URI, a wix:image:// ref, or a plain URL
+  const rawAvatar = (item.avatar as string) ?? "";
+  const avatar =
+    rawAvatar.startsWith("data:") || rawAvatar.startsWith("http")
+      ? rawAvatar
+      : getWixImageUrl(rawAvatar);
+
+  return {
+    _id: (item._id as string) ?? "",
+    name: (item.name as string) ?? "",
+    avatar,
+    quote: rawQuote,
+    date,
+    tourRef,
+    featured: (item.featured as boolean) ?? false,
+  };
+}
+
+/**
+ * Fetch testimonials from the Wix CMS "Testimonials" collection.
+ * Supports filtering by `featured === true` and/or `tourRef` (tour _id).
+ * Returns featured-first, sorted by _createdDate descending.
+ * Falls back to [] on any error so the page never crashes.
+ */
+export async function fetchTestimonials(
+  limit = 6,
+  options?: { featuredOnly?: boolean; tourId?: string },
+): Promise<WixTestimonial[]> {
+  const client = wixClient();
+  if (!client) return [];
+
+  try {
+    let query = client.items
+      .query(TESTIMONIALS_COLLECTION)
+      .descending("_createdDate")
+      .limit(limit);
+
+    if (options?.featuredOnly) {
+      query = query.eq("featured", true);
+    }
+    if (options?.tourId) {
+      query = query.eq("tourRef", options.tourId);
+    }
+
+    const res = await query.find();
+
+    const items = (res.items ?? []) as RawItem[];
+    const mapped = items.map(mapTestimonial).filter((t) => t.name && t.quote);
+
+    // Featured items bubble to the top
+    mapped.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+
+    return mapped;
+  } catch (err) {
+    console.warn("[fetchTestimonials] Wix query failed:", err);
+    return [];
+  }
+}
