@@ -76,15 +76,6 @@ function HeroMainCard() {
           </Link>
         </div>
       </div>
-      {/* Proxy the external page via /api/proxy so it can be embedded in an iframe.
-          The proxy strips CSP meta tags and rewrites asset URLs to the remote origin.
-          pointer-events-none prevents the ad from intercepting hero interactions. */}
-      <iframe
-        src="/api/proxy?path=/adventure"
-        title="Advertisement"
-        className="absolute inset-0 w-full h-full z-10 pointer-events-none"
-        aria-hidden="true"
-      />
     </BentoCard>
   );
 }
