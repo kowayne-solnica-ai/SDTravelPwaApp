@@ -102,17 +102,13 @@ export function AdBentoCard({
     .filter(Boolean)
     .join(" ");
 
-  if (ad.href) {
-    return (
-      <Link href={ad.href} className={classes} style={style}>
-        <AdCardInner ad={ad} featured={featured} />
-      </Link>
-    );
-  }
+  // Always render as a navigable Link. If the CMS record has no explicit href,
+  // fall back to /tours so "View Offer" is always interactive.
+  const href = ad.href ?? "/tours";
 
   return (
-    <div className={classes} style={style}>
+    <Link href={href} className={classes} style={style}>
       <AdCardInner ad={ad} featured={featured} />
-    </div>
+    </Link>
   );
 }
