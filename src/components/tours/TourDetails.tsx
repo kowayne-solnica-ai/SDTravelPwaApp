@@ -23,6 +23,7 @@ import {
 import type { Tour, ItineraryDay, WixImage, Destination, Accommodation } from "@/types/tour"
 import dynamic from "next/dynamic"
 import { formatPrice } from "@/lib/utils/format"
+import { SaveDiamondButton } from "@/components/tours/SaveDiamondButton"
 import { TestimonialCarousel } from "@/components/tours/TestimonialCarousel"
 import type { Testimonial } from "@/components/tours/TestimonialCarousel"
 
@@ -78,7 +79,6 @@ interface TourDetailsProps {
 }
 
 export function TourDetails({ tour, itinerary, destination, accommodations = [], remoteAccImages = {}, testimonials }: TourDetailsProps) {
-  const [liked, setLiked] = useState(false)
   const [shareTooltip, setShareTooltip] = useState(false)
   const [savedAccom, setSavedAccom] = useState<Set<string>>(new Set())
 
@@ -192,17 +192,12 @@ export function TourDetails({ tour, itinerary, destination, accommodations = [],
 
           {/* Like / Share floating buttons */}
           <div className="absolute right-6 top-8 z-20 flex gap-2 sm:right-10">
-            <button
-              onClick={() => setLiked(!liked)}
-              aria-label={liked ? "Remove from saved" : "Save tour"}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/20 backdrop-blur-md transition-all hover:bg-white/40"
-            >
-              <Heart
-                className={`h-5 w-5 transition-colors ${
-                  liked ? "fill-red-500 text-red-500" : "text-white"
-                }`}
-              />
-            </button>
+            <SaveDiamondButton
+              tourId={tour._id}
+              tourSlug={tour.slug}
+              tourTitle={tour.title}
+              heroImageSrc={tour.heroImage.src}
+            />
 
             <div className="relative">
               <button
