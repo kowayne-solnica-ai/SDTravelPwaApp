@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Heart } from "lucide-react"
+import { Diamond } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/hooks/useAuth"
 import { useSavedDiamonds } from "@/hooks/useSavedDiamonds"
@@ -88,7 +88,7 @@ export function SaveDiamondButton({
         "flex items-center justify-center rounded-full border transition-all",
         dim,
         saved
-          ? "border-red-300 bg-white/90 dark:border-red-500/40 dark:bg-ocean-card/90"
+          ? "border-luxgold/40 bg-white/90 dark:border-luxgold/40 dark:bg-ocean-card/90"
           : "border-white/20 bg-white/20 backdrop-blur-md hover:bg-white/40 dark:border-white/15 dark:hover:bg-white/10",
         className,
       ].join(" ")}
@@ -102,11 +102,11 @@ export function SaveDiamondButton({
           transition={{ duration: 0.18 }}
           className="flex items-center justify-center"
         >
-          <Heart
+          <Diamond
             className={[
               iconSize,
               "transition-colors",
-              saved ? "fill-red-500 text-red-500" : "text-white",
+              saved ? "fill-luxgold text-luxgold" : "text-white",
             ].join(" ")}
           />
         </motion.span>
