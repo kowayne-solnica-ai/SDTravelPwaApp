@@ -75,7 +75,7 @@ export function SaveDiamondButton({
   }, [])
 
   const dim = size === "sm" ? "h-8 w-8" : "h-10 w-10"
-  const iconSize = size === "sm" ? "h-4 w-4" : "h-5 w-5"
+  const iconSize = size === "sm" ? " w-full" : " w-full"
 
   return (
     <>
@@ -103,7 +103,7 @@ export function SaveDiamondButton({
           className="flex items-center justify-center"
         >
           <DiamondIcon
-            className={[iconSize, "transition-colors", saved ? "text-luxgold" : "text-white"].join(" ")}
+            className={[iconSize, "transition-colors","aspect-square","p-0.5", saved ? "text-luxgold" : "text-white"].join(" ")}
             filled={saved}
           />
         </motion.span>

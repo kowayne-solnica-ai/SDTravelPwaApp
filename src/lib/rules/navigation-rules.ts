@@ -11,7 +11,7 @@ export const DISCOVER_GROUP: NavGroup = {
   items: [
     { id: "home", label: "Home", href: "/", icon: "home" },
     { id: "destinations", label: "Destinations", href: "/destinations", icon: "map" },
-    { id: "saved", label: "Saved", href: "/dashboard/saved", icon: "heart", requiresAuth: true },
+    { id: "saved", label: "Saved", href: "/dashboard/saved", icon: "gem", requiresAuth: true },
     { id: "tours", label: "Tours", href: "/tours", icon: "compass" },
     {
       id: "accommodations",
@@ -58,9 +58,7 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
   if (hrefPath === "/") {
     return pathname === "/";
   }
-  if (pathname === hrefPath || pathname.startsWith(`${hrefPath}/`)) return true;
-  // An item with children is active when any child matches
-  return item.children?.some((child) => isNavItemActive(child, pathname)) ?? false;
+  return pathname === hrefPath || pathname.startsWith(`${hrefPath}/`);
 }
 
 /**
