@@ -41,13 +41,13 @@ export function DesktopShell({ children }: DesktopShellProps) {
 
       {/* Content column — offset on desktop for sidebar */}
       <div
-        className="flex min-h-dvh flex-col md:ml-[var(--sidebar-width)]"
+        className="relative flex min-h-dvh flex-col md:ml-[var(--sidebar-width)]"
       >
         {/* TopBar — desktop only */}
-        <div className="hidden md:block">
+        <div className="hidden  top-0 z-20  flex-1 md:block">
           <TopBar />
         </div>
-        <main className="flex-1 pb-[calc(64px+env(safe-area-inset-bottom))] md:p-8 md:pb-8">
+        <main className="absolute top-20 overflow-auto w-full flex-1 pb-[calc(64px+env(safe-area-inset-bottom))] md:p-8 md:pb-8">
           {children}
         </main>
       </div>
