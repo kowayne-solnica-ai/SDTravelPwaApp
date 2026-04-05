@@ -1,4 +1,12 @@
 import type { NavGroup, NavItem } from "@/types/navigation";
+import type { UserRole } from "@/types/tenant";
+
+// Role hierarchy: super_admin > tenant_admin > user
+const ROLE_RANK: Record<string, number> = {
+  user: 1,
+  tenant_admin: 2,
+  super_admin: 3,
+};
 
 // ---------------------------------------------------------------------------
 // Navigation definitions
@@ -41,6 +49,39 @@ export const ACCOUNT_GROUP: NavGroup = {
 /** All sidebar navigation groups in display order. */
 export const SIDEBAR_NAV_GROUPS: NavGroup[] = [DISCOVER_GROUP];
 
+/** Tenant admin group — visible to tenant_admin and super_admin. */
+export const TENANT_ADMIN_GROUP: NavGroup = {
+  id: "tenant-admin",
+  label: "Tenant Admin",
+  requiredRole: "tenant_admin",
+  items: [
+    { id: "tenant-dashboard", label: "Dashboard", href: "/dashboard/admin", icon: "layout-dashboard", requiresAuth: true },
+    { id: "tenant-bookings", label: "All Bookings", href: "/dashboard/admin/bookings", icon: "calendar-days", requiresAuth: true },
+    { id: "tenant-users", label: "Users", href: "/dashboard/admin/users", icon: "users", requiresAuth: true },
+    { id: "tenant-settings", label: "Settings", href: "/dashboard/admin/settings", icon: "settings", requiresAuth: true },
+  ],
+};
+
+/** Super admin group — visible to super_admin only. */
+export const SUPER_ADMIN_GROUP: NavGroup = {
+  id: "super-admin",
+  label: "Super Admin",
+  requiredRole: "super_admin",
+  items: [
+    { id: "super-dashboard", label: "Platform Overview", href: "/dashboard/super", icon: "bar-chart", requiresAuth: true },
+    { id: "super-tenants", label: "Tenants", href: "/dashboard/super/tenants", icon: "building", requiresAuth: true },
+    { id: "super-affiliates", label: "Applications", href: "/dashboard/super/affiliates", icon: "users", requiresAuth: true },
+  ],
+};
+
+/** All navigation groups including admin sections. Filter by role at render time. */
+export const ALL_NAV_GROUPS: NavGroup[] = [
+  DISCOVER_GROUP,
+  ACCOUNT_GROUP,
+  TENANT_ADMIN_GROUP,
+  SUPER_ADMIN_GROUP,
+];
+
 // ---------------------------------------------------------------------------
 // Pure helper functions
 // ---------------------------------------------------------------------------
@@ -77,4 +118,17 @@ export function getActiveNavItem(
     }
   }
   return null;
+}
+
+/**
+ * Filter navigation groups based on the user's role.
+ * Groups without a requiredRole are always included.
+ * Groups with a requiredRole are included if the user's role rank >= required rank.
+ */
+export function getNavGroupsForRole(role?: UserRole | null): NavGroup[] {
+  const userRank = ROLE_RANK[role ?? "user"] ?? 1;
+  return ALL_NAV_GROUPS.filter((group) => {
+    if (!group.requiredRole) return true;
+    return userRank >= (ROLE_RANK[group.requiredRole] ?? 999);
+  });
 }
