@@ -159,6 +159,7 @@ export function subscribeToAllRooms(
           _id: d.id,
           clientUid: data.clientUid ?? "",
           agentUid: data.agentUid ?? "",
+          tenantId: data.tenantId ?? "www",
           tourId: data.tourId,
           tourSlug: data.tourSlug,
           status: normaliseStatus(data.status),

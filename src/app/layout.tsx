@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import localFont from "next/font/local";
 import { DesktopShell } from "@/components/layout";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
@@ -6,7 +7,9 @@ import IOSInstallPrompt from "@/components/pwa/IOSInstallPrompt";
 import OfflineBanner from "@/components/pwa/OfflineBanner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { MockModeProvider } from "@/hooks/useMockMode";
+import { TenantProvider } from "@/hooks/useTenant";
 import { BRAND } from "@/lib/config/brand";
+import type { TenantContext } from "@/types/tenant";
 import "@/styles/globals.css";
 
 // ---------------------------------------------------------------------------
@@ -146,11 +149,19 @@ function TravelAgencyJsonLd() {
 // Root Layout
 // ---------------------------------------------------------------------------
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read tenant context injected by Edge Middleware (SOW §6.2)
+  const hdrs = await headers();
+  const tenantCtx: TenantContext = {
+    tenantId: hdrs.get("x-tenant-id") ?? "www",
+    wixSiteId: hdrs.get("x-wix-site-id") ?? process.env.WIX_META_SITE_ID ?? "",
+    tenantName: hdrs.get("x-tenant-name") ?? BRAND.name,
+  };
+
   return (
     <html
       lang="en"
@@ -169,20 +180,22 @@ export default function RootLayout({
       <body className="bg-tan-50 font-sans text-ocean-deep antialiased transition-colors duration-300 dark:bg-ocean-deep dark:text-white">
         <OfflineBanner />
         <TravelAgencyJsonLd />
-        <AuthProvider>
-          <MockModeProvider>
-            {/* Desktop: sidebar shell (hidden on mobile via internal CSS) */}
-            {/* Mobile: children render directly, shell passthroughs */}
-            <DesktopShell>
-              {children}
-            </DesktopShell>
-            {/* Mobile only: bottom nav + iOS install prompt */}
-            <div className="md:hidden">
-              <MobileBottomNav />
-              <IOSInstallPrompt />
-            </div>
-          </MockModeProvider>
-        </AuthProvider>
+        <TenantProvider value={tenantCtx}>
+          <AuthProvider>
+            <MockModeProvider>
+              {/* Desktop: sidebar shell (hidden on mobile via internal CSS) */}
+              {/* Mobile: children render directly, shell passthroughs */}
+              <DesktopShell>
+                {children}
+              </DesktopShell>
+              {/* Mobile only: bottom nav + iOS install prompt */}
+              <div className="md:hidden">
+                <MobileBottomNav />
+                <IOSInstallPrompt />
+              </div>
+            </MockModeProvider>
+          </AuthProvider>
+        </TenantProvider>
       </body>
     </html>
   );
