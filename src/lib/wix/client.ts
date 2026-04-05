@@ -10,21 +10,44 @@ import { contacts, submittedContact } from "@wix/crm";
 import { conversations, messages } from "@wix/inbox";
 
 // ---------------------------------------------------------------------------
-// Wix Headless SDK — Singleton Clients
+// Wix Headless SDK — Multi-Tenant Client Factory (SOW §6.2)
 // ---------------------------------------------------------------------------
-// wixClient()      → OAuth-based client for CMS, bookings, members (public data)
-// wixAdminClient() → API-key-based client for CRM, Inbox (requires elevated perms)
+// wixClient(siteId?)    → OAuth client; per-tenant when siteId provided
+// wixAdminClient(siteId?) → API-key client; per-tenant when siteId provided
 //
 // IMPORTANT: These modules must only be imported in server contexts.
 // ---------------------------------------------------------------------------
 
-function getWixClient() {
+/** Standard CMS modules shared by all tenant clients. */
+const CMS_MODULES = {
+  bookings,
+  availabilityCalendar,
+  items,
+  members,
+  products,
+  submissions,
+  forms,
+  contacts,
+  submittedContact,
+  conversations,
+  messages,
+} as const;
+
+/** Admin-only modules (CRM, Inbox). */
+const ADMIN_MODULES = {
+  contacts,
+  submittedContact,
+  conversations,
+  messages,
+} as const;
+
+function buildOAuthClient(siteId: string | undefined) {
   const clientId = process.env.WIX_CLIENT_ID;
   const clientSecret = process.env.WIX_CLIENT_SECRET;
-  // Prefer WIX_META_SITE_ID (the Wix site's metaSiteId) over WIX_SITE_ID.
-  // WIX_SITE_ID is often misconfigured to the same value as WIX_CLIENT_ID;
-  // WIX_META_SITE_ID is the correct per-site identifier.
-  const siteId =
+
+  // Fall back to env-based siteId when none provided (backward compat / www)
+  const resolvedSiteId =
+    siteId ||
     process.env.WIX_META_SITE_ID ||
     process.env.WIX_SITE_ID ||
     process.env.NEXT_PUBLIC_WIX_SITE_ID;
@@ -42,80 +65,83 @@ function getWixClient() {
     );
   }
 
-  if (siteId && siteId === clientId) {
+  if (resolvedSiteId && resolvedSiteId === clientId) {
     console.warn(
-      "[Wix Client] WIX_SITE_ID equals WIX_CLIENT_ID — these should be different values. " +
-        "Set WIX_META_SITE_ID (or WIX_SITE_ID) to your Wix site's ID from Dashboard → Settings → General.",
+      "[Wix Client] siteId equals WIX_CLIENT_ID — these should be different values.",
     );
   }
 
   const authConfig: Record<string, string> = { clientId };
   if (clientSecret) authConfig.clientSecret = clientSecret;
-  if (siteId && siteId !== clientId) authConfig.siteId = siteId;
+  if (resolvedSiteId && resolvedSiteId !== clientId) authConfig.siteId = resolvedSiteId;
 
   return createClient({
-    modules: {
-      bookings,
-      availabilityCalendar,
-      items,
-      members,
-      products,
-      submissions,
-      forms,
-      contacts,
-      submittedContact,
-      conversations,
-      messages,
-    },
+    modules: CMS_MODULES,
     auth: OAuthStrategy(authConfig as any),
   });
 }
 
-// Admin client uses ApiKeyStrategy for elevated permissions (Inbox, CRM write)
-function getWixAdminClient() {
+function buildAdminClient(siteId: string | undefined) {
   const apiKey = process.env.WIX_API_KEY;
   const accountId = process.env.WIX_ACCOUNT_ID;
-  // Use WIX_META_SITE_ID when it differs from WIX_CLIENT_ID (they're different things).
-  // Fall back to WIX_SITE_ID only if WIX_META_SITE_ID is not set.
-  const metaSiteId = process.env.WIX_META_SITE_ID || undefined;
+  const resolvedSiteId = siteId || process.env.WIX_META_SITE_ID || undefined;
 
   if (!apiKey || !accountId) {
     return null;
   }
 
   return createClient({
-    modules: {
-      contacts,
-      submittedContact,
-      conversations,
-      messages,
-    },
+    modules: ADMIN_MODULES,
     auth: ApiKeyStrategy({
       apiKey,
       accountId,
-      ...(metaSiteId ? { siteId: metaSiteId } : {}),
+      ...(resolvedSiteId ? { siteId: resolvedSiteId } : {}),
     }),
   });
 }
 
-// Singleton — one client instance per server lifecycle
-let _client: ReturnType<typeof getWixClient> | undefined;
+// ── Singleton cache for the default (www) tenant ───────────────────────────
+let _defaultClient: ReturnType<typeof buildOAuthClient> | undefined;
+let _defaultAdminClient: ReturnType<typeof buildAdminClient> | undefined;
 
-export function wixClient() {
-  if (_client === undefined) {
-    _client = getWixClient();
+// ── Per-tenant client cache (avoids re-creating on every request) ──────────
+const _tenantClients = new Map<string, ReturnType<typeof buildOAuthClient>>();
+const _tenantAdminClients = new Map<string, ReturnType<typeof buildAdminClient>>();
+
+/**
+ * Get a Wix OAuth client. When `siteId` is provided, returns a tenant-specific
+ * client (cached). Without `siteId`, returns the default singleton (www).
+ */
+export function wixClient(siteId?: string) {
+  if (!siteId) {
+    if (_defaultClient === undefined) {
+      _defaultClient = buildOAuthClient(undefined);
+    }
+    return _defaultClient;
   }
-  console.log("[Wix Client] Initialized:", !!_client);
-  return _client;
+
+  if (!_tenantClients.has(siteId)) {
+    _tenantClients.set(siteId, buildOAuthClient(siteId));
+  }
+  return _tenantClients.get(siteId)!;
 }
 
-let _adminClient: ReturnType<typeof getWixAdminClient> | undefined;
-
-export function wixAdminClient() {
-  if (_adminClient === undefined) {
-    _adminClient = getWixAdminClient();
+/**
+ * Get a Wix Admin client. When `siteId` is provided, returns a tenant-specific
+ * client (cached). Without `siteId`, returns the default singleton (www).
+ */
+export function wixAdminClient(siteId?: string) {
+  if (!siteId) {
+    if (_defaultAdminClient === undefined) {
+      _defaultAdminClient = buildAdminClient(undefined);
+    }
+    return _defaultAdminClient;
   }
-  return _adminClient;
+
+  if (!_tenantAdminClients.has(siteId)) {
+    _tenantAdminClients.set(siteId, buildAdminClient(siteId));
+  }
+  return _tenantAdminClients.get(siteId)!;
 }
 
 export type WixClient = NonNullable<ReturnType<typeof wixClient>>;
