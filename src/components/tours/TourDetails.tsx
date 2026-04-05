@@ -20,7 +20,7 @@ import {
   Shield,
   Copy,
 } from "lucide-react"
-import type { Tour, ItineraryDay, WixImage, Destination, Accommodation } from "@/types/tour"
+import type { Tour, ItineraryDay, WixImage, Destination, Room } from "@/types/tour"
 import dynamic from "next/dynamic"
 import { formatPrice } from "@/lib/utils/format"
 import { SaveDiamondButton } from "@/components/tours/SaveDiamondButton"
@@ -72,13 +72,13 @@ interface TourDetailsProps {
   tour: Tour
   itinerary: ItineraryDay[]
   destination?: Destination | null
-  accommodations?: Accommodation[]
-  remoteAccImages?: Record<string, { src: string; alt?: string }>
+  rooms?: Room[]
+  remoteRoomImages?: Record<string, { src: string; alt?: string }>
   /** Testimonials fetched from Wix CMS filtered by this tour's _id */
   testimonials?: Testimonial[]
 }
 
-export function TourDetails({ tour, itinerary, destination, accommodations = [], remoteAccImages = {}, testimonials }: TourDetailsProps) {
+export function TourDetails({ tour, itinerary, destination, rooms = [], remoteRoomImages = {}, testimonials }: TourDetailsProps) {
   const [shareTooltip, setShareTooltip] = useState(false)
   const [savedAccom, setSavedAccom] = useState<Set<string>>(new Set())
 
@@ -381,7 +381,7 @@ export function TourDetails({ tour, itinerary, destination, accommodations = [],
           )}
 
           {/* ── Itinerary Timeline (Parent→Child) ──────────────────── */}
-          <ItineraryTimeline days={itinerary} accommodations={accommodations} destination={destination} />
+          <ItineraryTimeline days={itinerary} rooms={rooms} destination={destination} />
 
           {/* ── Meet Your Team — daisyUI avatars ────────────────────── */}
           <motion.section
@@ -428,8 +428,8 @@ export function TourDetails({ tour, itinerary, destination, accommodations = [],
           {/* ── Testimonials ─────────────────────────────────────────── */}
           <TestimonialCarousel testimonials={testimonials ?? []} />
 
-          {/* ── Accommodation ─────────────────────────────────────── */}
-          {accommodations.length > 0 && (
+          {/* ── Room ─────────────────────────────────────── */}
+          {rooms.length > 0 && (
             <motion.section
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -441,12 +441,12 @@ export function TourDetails({ tour, itinerary, destination, accommodations = [],
                 Where You&apos;ll Stay
               </h2>
               <p className="mb-6 text-sm text-ocean-deep/55">
-                {accommodations.length} propert{accommodations.length === 1 ? "y" : "ies"} on this tour
+                {rooms.length} propert{rooms.length === 1 ? "y" : "ies"} on this tour
               </p>
 
               {/* Horizontal scroll on mobile, grid on lg */}
               <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 lg:grid lg:grid-cols-2 lg:overflow-visible xl:grid-cols-3">
-                {accommodations.map((acc) => {
+                {rooms.map((acc) => {
                   const isSaved = savedAccom.has(acc._id)
                   const DEFAULT_SRC = "/og/default.jpg"
                   // Prefer a real hero image; fall back to the first gallery image
@@ -458,7 +458,7 @@ export function TourDetails({ tour, itinerary, destination, accommodations = [],
                       : null
 
                   const candidateImage =
-                    candidateFromRecord ?? (acc._id ? remoteAccImages[acc._id] ?? null : null)
+                    candidateFromRecord ?? (acc._id ? remoteRoomImages[acc._id] ?? null : null)
 
                   const hasImage = Boolean(candidateImage && candidateImage.src)
 

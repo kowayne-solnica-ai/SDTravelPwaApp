@@ -43,7 +43,7 @@ export async function GET(request: Request, context: RouteContext) {
     let tour = null
     let itinerary = null
     let destination = null
-    let accommodations = null
+    let rooms = null
 
     const tourSlug = (booking as Record<string, unknown>).tourSlug as string | undefined
     if (tourSlug) {
@@ -52,7 +52,7 @@ export async function GET(request: Request, context: RouteContext) {
         tour = result.tour
         itinerary = result.itinerary
         destination = result.destination
-        accommodations = result.accommodations
+        rooms = result.rooms
       }
     }
 
@@ -61,7 +61,7 @@ export async function GET(request: Request, context: RouteContext) {
       tour,
       itinerary,
       destination,
-      accommodations,
+      rooms,
     })
   } catch (err) {
     console.error("[Booking Detail] Error:", err)

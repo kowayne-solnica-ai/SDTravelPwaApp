@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Hotel, Search } from "lucide-react";
-import { getAccommodationsByType } from "@/lib/services/tours.service";
-import { AccommodationCard } from "@/components/accommodations";
+import { getRoomsByType } from "@/lib/services/tours.service";
+import { RoomCard } from "@/components/rooms";
 
 export const revalidate = 300;
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HotelsPage() {
-  const accommodations = await getAccommodationsByType("resort");
+  const rooms = await getRoomsByType("resort");
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -29,10 +29,10 @@ export default async function HotelsPage() {
         </p>
       </div>
 
-      {accommodations.length > 0 ? (
+      {rooms.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {accommodations.map((acc) => (
-            <AccommodationCard key={acc._id} accommodation={acc} />
+          {rooms.map((acc) => (
+            <RoomCard key={acc._id} room={acc} />
           ))}
         </div>
       ) : (

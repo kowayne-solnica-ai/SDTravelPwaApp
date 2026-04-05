@@ -9,7 +9,7 @@ type Step =
   | "dates"
   | "guests"
   | "arrival"
-  | "accommodation"
+  | "room"
   | "review"
   | "processing"
   | "confirmed"
@@ -29,7 +29,7 @@ interface BookingState {
   dataSource: "STORES" | "CMS" | null
   error: string | null
   arrivingByAir: boolean | null
-  accommodationType: "resort" | "airbnb" | null
+  roomType: "resort" | "airbnb" | null
   pickupDetails: PickupDetails | null
 }
 
@@ -37,7 +37,7 @@ type Action =
   | { type: "SET_DATES"; tourDate: string }
   | { type: "SET_GUESTS"; guests: number; totalPrice: number }
   | { type: "SET_ARRIVAL"; arrivingByAir: boolean }
-  | { type: "SET_ACCOMMODATION"; accommodationType: "resort" | "airbnb" }
+  | { type: "SET_ROOM"; roomType: "resort" | "airbnb" }
   | { type: "SET_PICKUP"; pickupDetails: PickupDetails }
   | { type: "SUBMIT" }
   | { type: "SUCCESS"; result: BookingResult }
@@ -56,9 +56,9 @@ function reducer(state: BookingState, action: Action): BookingState {
         step: "arrival",
       }
     case "SET_ARRIVAL":
-      return { ...state, arrivingByAir: action.arrivingByAir, step: "accommodation" }
-    case "SET_ACCOMMODATION":
-      return { ...state, accommodationType: action.accommodationType, step: "review" }
+      return { ...state, arrivingByAir: action.arrivingByAir, step: "room" }
+    case "SET_ROOM":
+      return { ...state, roomType: action.roomType, step: "review" }
     case "SET_PICKUP":
       return { ...state, pickupDetails: action.pickupDetails }
     case "SUBMIT":
@@ -94,7 +94,7 @@ function initialState(tourSlug: string, tourId: string, currency: string): Booki
     dataSource: null,
     error: null,
     arrivingByAir: null,
-    accommodationType: null,
+    roomType: null,
     pickupDetails: null,
   }
 }
@@ -114,8 +114,8 @@ export function useBooking(tourSlug: string, tourId: string, currency = "USD") {
     dispatch({ type: "SET_ARRIVAL", arrivingByAir })
   }, [])
 
-  const setAccommodation = useCallback((accommodationType: "resort" | "airbnb") => {
-    dispatch({ type: "SET_ACCOMMODATION", accommodationType })
+  const setRoom = useCallback((roomType: "resort" | "airbnb") => {
+    dispatch({ type: "SET_ROOM", roomType })
   }, [])
 
   const setPickup = useCallback((pickupDetails: PickupDetails) => {
@@ -167,5 +167,5 @@ export function useBooking(tourSlug: string, tourId: string, currency = "USD") {
     dispatch({ type: "RESET" })
   }, [])
 
-  return { state, setDates, setGuests, setArrival, setAccommodation, setPickup, submit, reset }
+  return { state, setDates, setGuests, setArrival, setRoom, setPickup, submit, reset }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAccommodationById } from "@/lib/wix/tours";
+import { getRoomById } from "@/lib/wix/tours";
 
 export async function GET(req: Request) {
   const allowDebug = process.env.WIX_DEBUG_API === "true" || process.env.NODE_ENV !== "production";
@@ -14,11 +14,11 @@ export async function GET(req: Request) {
   }
 
   try {
-    const acc = await getAccommodationById(id);
-    if (!acc) return NextResponse.json({ ok: false, error: "Accommodation not found" }, { status: 404 });
-    return NextResponse.json({ ok: true, accommodation: acc }, { status: 200 });
+    const acc = await getRoomById(id);
+    if (!acc) return NextResponse.json({ ok: false, error: "Room not found" }, { status: 404 });
+    return NextResponse.json({ ok: true, room: acc }, { status: 200 });
   } catch (err) {
-    console.error("/api/wix/debug/accommodations error:", err);
+    console.error("/api/wix/debug/rooms error:", err);
     return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
   }
 }

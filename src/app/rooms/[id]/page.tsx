@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { getAccommodationById } from "@/lib/wix/tours"
-import type { Accommodation } from "@/types/tour"
+import { getRoomById } from "@/lib/wix/tours"
+import type { Room } from "@/types/tour"
 import { faker } from '@/lib/demo/faker'
 
 interface PageProps {
@@ -12,14 +12,14 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const acc = await getAccommodationById(id)
-  if (!acc) return { title: "Accommodation" }
-  return { title: acc.name || "Accommodation" }
+  const acc = await getRoomById(id)
+  if (!acc) return { title: "Room" }
+  return { title: acc.name || "Room" }
 }
 
 export default async function Page({ params }: PageProps) {
   const { id } = await params
-  const acc: Accommodation | null = await getAccommodationById(id)
+  const acc: Room | null = await getRoomById(id)
   if (!acc) return notFound()
 
   // demo filler using faker for missing fields

@@ -14,13 +14,13 @@ export const DISCOVER_GROUP: NavGroup = {
     { id: "saved", label: "Saved", href: "/dashboard/saved", icon: "gem", requiresAuth: true },
     { id: "tours", label: "Tours", href: "/tours", icon: "compass" },
     {
-      id: "accommodations",
-      label: "Accommodations",
-      href: "/accommodations/hotels",
+      id: "rooms",
+      label: "Rooms",
+      href: "/rooms/hotels",
       icon: "hotel",
       children: [
-        { id: "hotels", label: "Hotels", href: "/accommodations/hotels", icon: "hotel" },
-        { id: "airbnbs", label: "Airbnbs", href: "/accommodations/airbnbs", icon: "building" },
+        { id: "hotels", label: "Hotels", href: "/rooms/hotels", icon: "hotel" },
+        { id: "airbnbs", label: "Airbnbs", href: "/rooms/airbnbs", icon: "building" },
       ],
     },
     { id: "taxi", label: "Taxi", href: "/taxi", icon: "car" },
